@@ -3,7 +3,7 @@
 
 # ======= Path =======
 eembc=/data/local/tmp/CY/models/EEMBC_SH
-logger=/data/local/tmp/SM/logger/7alogger/logger_1s_pixel7a_logx
+logger=/data/local/tmp/SM/logger/0408/logger_1s_pixel7a_0408
 
 output_dir=/data/local/tmp/SM/0326loggertest/outputs
 
