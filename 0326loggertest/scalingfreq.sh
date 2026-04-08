@@ -2,12 +2,18 @@
 
 # ======= 경로 설정 =======
 # 이전에 말씀하신 경로들을 기준으로 설정했습니다.
-logger="/data/local/tmp/SM/logger/0408/logger_1s_pixel7a_0408"
+logger="/data/local/tmp/SM/logger/0408/logger_10ms_pixel7a_0408"
 output_dir="/data/local/tmp/SM/0326loggertest/outputs"
 output_file="${output_dir}/0408exp1_$(date +%m%d_%H%M%S).txt"
 
 mkdir -p ${output_dir}
+# ======= 1. 거버너 performance로 변경 및 최저 클럭 초기화 =======
+echo "=== Step 1: Set Governor to Performance & Min Freq ==="
 
+# 전 코어 공통: 거버너부터 고정
+for i in $(seq 0 7); do
+    echo "performance" > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor
+done
 # ======= 1. 모든 코어 최저 클럭으로 초기화 (안정화) =======
 echo "=== Step 1: Initialize to Min Freq ==="
 for i in $(seq 0 3); do echo 300000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq; echo 300000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq; done
@@ -56,11 +62,11 @@ sleep 5
 kill -9 ${LOGGER_PID}
 echo "Logger stopped."
 
-# 원복 (필요한 경우 실행)
-echo "Restoring default settings..."
-for i in $(seq 0 7); do
-    echo 2850000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq
-    echo 500000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
-done
+# # 원복 (필요한 경우 실행)
+# echo "Restoring default settings..."
+# for i in $(seq 0 7); do
+#     echo 2850000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq
+#     echo 500000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
+# done
 
 echo "Test Complete. Output saved to: ${output_file}"
