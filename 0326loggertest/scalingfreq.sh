@@ -50,8 +50,8 @@ echo "Trigger Time: $(date '+%H:%M:%S.%N')"
 
 # BIG (6-7) -> 851000
 for i in $(seq 6 7); do
-    echo 851000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq
-    echo 851000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
+    echo 2850000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq
+    echo 2850000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
 done
 
 # 상승된 클럭으로 5초 더 로깅
