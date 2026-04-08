@@ -1,68 +1,66 @@
 #!/system/bin/sh
-# Fix all CPUs to 500000 kHz and run nnet with logger
 
-# ======= Path =======
-eembc=/data/local/tmp/CY/models/EEMBC_SH
-logger=/data/local/tmp/SM/logger/0408/logger_1s_pixel7a_0408
+# ======= 경로 설정 =======
+# 이전에 말씀하신 경로들을 기준으로 설정했습니다.
+logger="/data/local/tmp/SM/logger/0408/logger_1s_pixel7a_0408"
+output_dir="/data/local/tmp/SM/0326loggertest/outputs"
+output_file="${output_dir}/0408exp1_$(date +%m%d_%H%M%S).txt"
 
-output_dir=/data/local/tmp/SM/0326loggertest/outputs
+mkdir -p ${output_dir}
 
-# ======= CPU mask =======
-MID4=10
-BIG7=80
+# ======= 1. 모든 코어 최저 클럭으로 초기화 (안정화) =======
+echo "=== Step 1: Initialize to Min Freq ==="
+for i in $(seq 0 3); do echo 300000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq; echo 300000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq; done
+for i in $(seq 4 5); do echo 400000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq; echo 400000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq; done
+for i in $(seq 6 7); do echo 500000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq; echo 500000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq; done
 
-exe=nnet
+echo "Initialization done."
 
-# ======= Fix all CPUs to 500000 kHz =======
-echo "=== Fixing all CPUs to 500000 kHz ==="
-for i in $(seq 0 7); do
-    CPUFREQ_PATH="/sys/devices/system/cpu/cpu${i}/cpufreq"
-    if [ -f "${CPUFREQ_PATH}/scaling_max_freq" ]; then
-        echo 500000 > ${CPUFREQ_PATH}/scaling_max_freq
-        echo 500000 > ${CPUFREQ_PATH}/scaling_min_freq
-        echo "cpu${i}: $(cat ${CPUFREQ_PATH}/scaling_cur_freq)"
-    else
-        echo "cpu${i}: cpufreq not found, skip"
-    fi
-done
+# ======= 2. 로거 실행 (Background) =======
+# MID 코어(cpu4)에 할당하여 실행
+taskset 10 ${logger} ${output_file} &
+LOGGER_PID=$!
+echo "Logger started (PID: ${LOGGER_PID}) -> Output: ${output_file}"
 
-echo "=== Freq lock done ==="
-sleep 2
-
-# ======= Logger 실행 =======
-taskset ${MID4} ${logger} ${output_dir}/${exe}_500kHz_allcpu.txt &
-echo "logger PID=$!"
-
-# ======= nnet 실행 =======
-taskset ${BIG7} ${eembc}/${exe} -v0 -c1 -w1 -i110 &
-APP_PID=$!
-echo "nnet PID=${APP_PID}"
-
-# ======= Thread affinity 확인 =======
-echo "=== Main thread ==="
-grep -E 'Cpus_allowed_list' /proc/${APP_PID}/status
-
-echo "=== Threads ==="
-for t in /proc/${APP_PID}/task/*; do
-    tid=${t##*/}
-    echo "TID: $tid"
-    grep -E 'Cpus_allowed_list' /proc/${tid}/status
-done
-
-# ======= 완료 대기 및 정리 =======
-wait ${APP_PID}
-
-kill -9 $(pgrep logger)
+# 최저 클럭 상태로 5초 유지
+echo "Maintaining Min Freq for 5s..."
 sleep 5
 
-# ======= Freq 복원 =======
-echo "=== Restoring freq ==="
-for i in $(seq 0 7); do
-    CPUFREQ_PATH="/sys/devices/system/cpu/cpu${i}/cpufreq"
-    if [ -f "${CPUFREQ_PATH}/scaling_max_freq" ]; then
-        echo 2850000 > ${CPUFREQ_PATH}/scaling_max_freq
-        echo 500000  > ${CPUFREQ_PATH}/scaling_min_freq
-    fi
+# ======= 3. 클럭 1단계 상승 (Trigger) =======
+echo "=== Step 2: Scaling Up (Trigger) ==="
+echo "Trigger Time: $(date '+%H:%M:%S.%N')"
+
+# # LITTLE (0-3) -> 574000
+# for i in $(seq 0 3); do
+#     echo 574000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq
+#     echo 574000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
+# done
+
+# # MID (4-5) -> 553000
+# for i in $(seq 4 5); do
+#     echo 553000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq
+#     echo 553000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
+# done
+
+# BIG (6-7) -> 851000
+for i in $(seq 6 7); do
+    echo 851000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq
+    echo 851000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
 done
 
-echo "=== Done ==="
+# 상승된 클럭으로 5초 더 로깅
+echo "Logging at higher freq for 5s..."
+sleep 5
+
+# ======= 4. 정리 및 복구 =======
+kill -9 ${LOGGER_PID}
+echo "Logger stopped."
+
+# 원복 (필요한 경우 실행)
+echo "Restoring default settings..."
+for i in $(seq 0 7); do
+    echo 2850000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq
+    echo 500000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
+done
+
+echo "Test Complete. Output saved to: ${output_file}"
