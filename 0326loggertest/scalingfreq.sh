@@ -7,6 +7,18 @@ output_dir="/data/local/tmp/SM/0326loggertest/outputs"
 output_file="${output_dir}/0412exp1_$(date +%m%d_%H%M%S).txt"
 
 mkdir -p ${output_dir}
+
+echo "Initialization done."
+
+# ======= 2. 로거 실행 (Background) =======
+# MID 코어(cpu4)에 할당하여 실행
+taskset 10 ${logger} ${output_file} &
+LOGGER_PID=$!
+echo "Logger started (PID: ${LOGGER_PID}) -> Output: ${output_file}"
+
+# 최저 클럭 상태로 5초 유지
+echo "Maintaining Min Freq for 5s..."
+sleep 5
 # ======= 1. 거버너 performance로 변경 및 최저 클럭 초기화 =======
 echo "=== Step 1: Set Governor to Performance & Min Freq ==="
 
@@ -20,17 +32,7 @@ for i in $(seq 0 3); do echo 300000 > /sys/devices/system/cpu/cpu$i/cpufreq/scal
 for i in $(seq 4 5); do echo 400000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq; echo 400000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq; done
 for i in $(seq 6 7); do echo 500000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_max_freq; echo 500000 > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq; done
 
-echo "Initialization done."
 
-# ======= 2. 로거 실행 (Background) =======
-# MID 코어(cpu4)에 할당하여 실행
-taskset 10 ${logger} ${output_file} &
-LOGGER_PID=$!
-echo "Logger started (PID: ${LOGGER_PID}) -> Output: ${output_file}"
-
-# 최저 클럭 상태로 5초 유지
-echo "Maintaining Min Freq for 5s..."
-sleep 5
 
 # ======= 3. 클럭 1단계 상승 (Trigger) =======
 echo "=== Step 2: Scaling Up (Trigger) ==="
