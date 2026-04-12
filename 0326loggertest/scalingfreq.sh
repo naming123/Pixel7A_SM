@@ -2,9 +2,9 @@
 
 # ======= 경로 설정 =======
 # 이전에 말씀하신 경로들을 기준으로 설정했습니다.
-logger="/data/local/tmp/SM/logger/0408/logger_1ms_pixel7a_0408"
+logger="/data/local/tmp/SM/logger/0412/logger_10ms_pixel7a_0412"
 output_dir="/data/local/tmp/SM/0326loggertest/outputs"
-output_file="${output_dir}/0408exp1_$(date +%m%d_%H%M%S).txt"
+output_file="${output_dir}/0412exp1_$(date +%m%d_%H%M%S).txt"
 
 mkdir -p ${output_dir}
 # ======= 1. 거버너 performance로 변경 및 최저 클럭 초기화 =======
