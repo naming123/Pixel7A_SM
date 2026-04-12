@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
  
 	
 }
-
+void write_fw_freq(FILE *fp) { FILE *buf = fopen("/sys/devices/platform/exynos-acme/fw_freq", "r"); if (!buf) { fprintf(fp, "OFF\tOFF\tOFF\t"); return; } int cpu; long freq; while (fscanf(buf, "cpu%d: freq: %ld", &cpu, &freq) == 2) { fprintf(fp, "%ld\t", freq); } fclose(buf); }
 void write_freq(FILE *fp)
 {
 	FILE *buf=NULL;
