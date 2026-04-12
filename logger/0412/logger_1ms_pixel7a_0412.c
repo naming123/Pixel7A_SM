@@ -23,6 +23,7 @@ void write_gpu(FILE *);
 void write_battery(FILE *);
 void write_bus(FILE *);
 void write_governer(FILE *);
+void write_fw_freq(FILE *);
 
 int main(int argc, char* argv[])
 {
@@ -64,6 +65,7 @@ int main(int argc, char* argv[])
 		
 		fprintf(fp, "GPU_state\tTPU_state\tbatt_volt\tbatt_curr\t");
 		fprintf(fp, "LIT0_governer\tLIT1_governer\tLIT2_governer\tLIT3_governer\tMID4_governer\tMID5_governer\tBIG6_governer\tBIG7_governer\t");
+		fprintf(fp, "LIT0_fw_freq\tMID4_fw_freq\tBIG6_fw_freq\t");
         fprintf(fp, "EOL\n"); // state = cooling_device8/9/10/16/11/cur_state + EOL 종료
 
         while(1){
@@ -83,6 +85,7 @@ int main(int argc, char* argv[])
 					write_temp(fp);
 					write_battery(fp);
 					write_governer(fp);
+					write_fw_freq(fp);
 					fprintf(fp,"EOL\n");
              		fflush(fp); 
 					btime += SAMPLING_TIME; 
